@@ -1,4 +1,0 @@
-/home/aj/.cache/JetBrains/RemoteDev/dist/562cce36751b3_CLion-2023.3.4/bin/cmake/linux/x64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/home/aj/.cache/JetBrains/RemoteDev/dist/562cce36751b3_CLion-2023.3.4/bin/ninja/linux/x64/ninja -G Ninja -S /home/aj/Dev/CS-8903-Research/RowHammer/CUDA-Row-Hammer -B /home/aj/Dev/CS-8903-Research/RowHammer/CUDA-Row-Hammer/cmake-build-debug
--- Configuring done (0.0s)
--- Generating done (0.0s)
--- Build files have been written to: /home/aj/Dev/CS-8903-Research/RowHammer/CUDA-Row-Hammer/cmake-build-debug

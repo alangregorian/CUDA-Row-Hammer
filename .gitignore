@@ -8,3 +8,4 @@
 # Ignore directories
 build/
 cmake-build-debug
+.idea
