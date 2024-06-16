@@ -49,7 +49,7 @@ int main() {
     std::ofstream file("access_latency_timing.txt");
 
     // Test with different strides
-    for (int stride = 1; stride <= 1024; stride *= 2) {
+    for (int stride = 1; stride <= 8192; stride *= 2) {
         measureAccessTime(d_array, stride, accesses, file);
     }
 
