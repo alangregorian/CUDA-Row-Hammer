@@ -1,0 +1,11 @@
+Stride: 1, Time: 0.000134235 s
+Stride: 2, Time: 8.4739e-05 s
+Stride: 4, Time: 8.3315e-05 s
+Stride: 8, Time: 8.2937e-05 s
+Stride: 16, Time: 8.3125e-05 s
+Stride: 32, Time: 8.2633e-05 s
+Stride: 64, Time: 8.3157e-05 s
+Stride: 128, Time: 8.2504e-05 s
+Stride: 256, Time: 8.1755e-05 s
+Stride: 512, Time: 8.2981e-05 s
+Stride: 1024, Time: 8.2553e-05 s

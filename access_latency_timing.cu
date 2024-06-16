@@ -1,5 +1,6 @@
 #include <cuda_runtime.h>
 #include <iostream>
+#include <fstream>
 #include <chrono>
 
 // Kernel to access global memory
@@ -17,14 +18,14 @@ __global__ void accessGlobalMemory(float* d_array, int stride, int accesses) {
     }
 }
 
-void measureAccessTime(float* d_array, int stride, int accesses) {
+void measureAccessTime(float* d_array, int stride, int accesses, std::ofstream& file) {
     auto start = std::chrono::high_resolution_clock::now();
     accessGlobalMemory<<<1, 1>>>(d_array, stride, accesses);
     cudaDeviceSynchronize();
     auto end = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<double> diff = end - start;
-    std::cout << diff.count()*1000 << std::endl;
+    file << "Stride: " << stride << ", Time: " << diff.count() << " s\n";
 }
 
 int main() {
@@ -44,10 +45,16 @@ int main() {
     // Copy data from host to device
     cudaMemcpy(d_array, h_array, size * sizeof(float), cudaMemcpyHostToDevice);
 
+    // Open the file to write results
+    std::ofstream file("access_latency_timing.txt");
+
     // Test with different strides
     for (int stride = 1; stride <= 1024; stride *= 2) {
-        measureAccessTime(d_array, stride, accesses);
+        measureAccessTime(d_array, stride, accesses, file);
     }
+
+    // Close the file
+    file.close();
 
     // Free device memory
     cudaFree(d_array);
