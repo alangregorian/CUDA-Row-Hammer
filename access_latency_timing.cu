@@ -25,7 +25,7 @@ void measureAccessTime(float* d_array, int stride, int accesses, std::ofstream& 
     auto end = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<double> diff = end - start;
-    file << "Stride: " << stride << ", Time: " << diff.count() << " s\n";
+    file << diff.count() << std::endl;
 }
 
 int main() {
