@@ -7,7 +7,7 @@
 #define N 1024*1024  // Number of iterations
 
 __global__ void write_latency_test(volatile int* d_array, const int* d_random_values, unsigned long long* d_time) {
-    for (int idx = 0; idx < 250; idx++) {
+    for (int idx = 0; idx < 5000; idx++) {
         unsigned long long start_time = clock();
 
         int temp = d_random_values[idx];
@@ -50,7 +50,7 @@ int main() {
     // Save the timings to a CSV file
     std::ofstream csv_file("write_latencies.csv");
     csv_file << "Iteration,Time\n";
-    for (int i = 0; i < 250; i++) {
+    for (int i = 0; i < 5000; i++) {
         csv_file << i << "," << h_time[i] << "\n";
     }
     csv_file.close();
