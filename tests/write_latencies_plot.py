@@ -8,7 +8,7 @@ data = pd.read_csv('write_latencies.csv')
 average_latency = data['Time'].mean()
 
 # Plot the latencies
-plt.figure(figsize=(20, 6))
+plt.figure(figsize=(15, 7))
 plt.plot(data['Iteration'], data['Time'], label='Write Latency')
 plt.axhline(y=average_latency, color='r', linestyle='--', label=f'Average Latency: {average_latency:.2f}')
 plt.xlabel('Iteration')
