@@ -14,7 +14,7 @@ const struct option LongOptions[] = {
 };
 
 void initPattern(unsigned int *pattern, const size_t size,
-    const size_t stride);
+    const size_t stride, const bool random);
 void printResults(const unsigned int *indices, const unsigned int *latencies,
     const size_t iterations, const size_t size, const size_t stride);
 void shufflePattern(unsigned int *pattern, const size_t size,
@@ -25,12 +25,15 @@ __global__ void pointerChaseKernel(unsigned int *pattern,
     unsigned int *indices, unsigned int *latencies, const size_t iterations);
 
 void initPattern(unsigned int *pattern, const size_t size,
-    const size_t stride) {
+    const size_t stride, const bool random) {
     for (size_t i = 0; i < size; i += stride) {
-        pattern[i] = i;
+        pattern[i] = i + stride;
     }
+    pattern[size-stride] = 0;
 
-    shufflePattern(pattern, size, stride);
+    if (random == true) {
+        shufflePattern(pattern, size, stride);
+    }
 }
 
 void printResults(const unsigned int *indices, const unsigned int *latencies,
@@ -57,9 +60,10 @@ void usage(const char *program) {
     std::cout << "Usage: " << program << " [options]" << std::endl
               << "Options:" << std::endl
               << "  -h (--help)       \tShow help message" << std::endl
-              << "  -i (--iterations) \tSet iterations" << std::endl
+              << "  -i (--iterations) \tSet number of iterations" << std::endl
               << "  -n (--size)       \tSet array size" << std::endl
-              << "  -s (--stride)     \tSet stride" << std::endl;
+              << "  -r (--random)     \tEnable random indices" << std::endl
+              << "  -s (--stride)     \tSet stride value" << std::endl;
 }
 
 // Fine-grained pointer chasing
@@ -83,10 +87,11 @@ int main(int argc, char *argv[]) {
     size_t iterations = 0;
     size_t size = 0;
     size_t stride = 0;
+    bool random = false;
 
     try {
         int opt, optValue;
-        while ((opt = getopt_long(argc, argv, "hi:n:s:",
+        while ((opt = getopt_long(argc, argv, "hi:n:rs:",
                 LongOptions, nullptr)) != -1) {
             switch (opt) {
                 case 'h':
@@ -123,6 +128,9 @@ int main(int argc, char *argv[]) {
                         usage(argv[0]);
                         return -1;
                     }
+                    break;
+                case 'r':
+                    random = true;
                     break;
                 case 's':
                     if (optarg) {
@@ -182,7 +190,7 @@ int main(int argc, char *argv[]) {
     memset(hostIndices, 0, iterations * sizeof(unsigned int));
     memset(hostLatencies, 0, iterations * sizeof(unsigned int));
     memset(hostPattern, 0, size * sizeof(unsigned int));
-    initPattern(hostPattern, size, stride);
+    initPattern(hostPattern, size, stride, random);
 
     unsigned int *deviceIndices, *deviceLatencies, *devicePattern;
     cudaMalloc((void**)&deviceIndices, iterations * sizeof(unsigned int));
