@@ -9,12 +9,12 @@
 
 const char *FILENAME = "strided_access.cubin";
 const char *KERNEL_NAME = "strided_access";
-const size_t NUM_LOADS = 128;
+const size_t ITERATIONS = 128;
 
 int main(int argc, char *argv[]) {
     if (argc != 4) {
-        std::cerr << "Usage: " << argv[0] << " <size> <offset> <stride>"
-                  << std::endl;
+        std::cerr << "Usage: " << argv[0]
+                  << " <array-size> <start-offset> <stride>" << std::endl;
         return -1;
     }
 
@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
         for (int i = 1; i < argc; i++) {
             switch(i) {
                 case 1:
-                    argValue = std::stol(argv[i]);
+                    argValue = std::stoll(argv[i]);
                     if ((argValue < std::numeric_limits<unsigned int>::max()) &&
                         (argValue > 0) && ((argValue % 2) == 0)) {
                         size = static_cast<size_t>(argValue);
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
                     }
                     break;
                 case 2:
-                    argValue = std::stol(argv[i]);
+                    argValue = std::stoll(argv[i]);
                     if ((argValue < static_cast<int64_t>(size)) &&
                         (argValue >= 0)) {
                         offset = static_cast<unsigned int>(argValue);
@@ -47,8 +47,8 @@ int main(int argc, char *argv[]) {
                     }
                     break;
                 case 3:
-                    argValue = std::stol(argv[i]);
-                    if (((offset + (argValue * (NUM_LOADS - 1))) < size) &&
+                    argValue = std::stoll(argv[i]);
+                    if (((offset + (argValue * (ITERATIONS - 1))) < size) &&
                         (argValue >= 0)) {
                         stride = static_cast<unsigned int>(argValue);
                         strideBytes = stride * sizeof(unsigned int);
@@ -59,7 +59,8 @@ int main(int argc, char *argv[]) {
                     break;
                 default:
                     std::cerr << "Usage: " << argv[0]
-                              << " <size> <offset> <stride>" << std::endl;
+                              << " <array-size> <start-offset> <stride>"
+                              << std::endl;
                     return -1;
             }
         }
@@ -75,7 +76,7 @@ int main(int argc, char *argv[]) {
     hostInput = static_cast<unsigned int*>(
         malloc(size * sizeof(unsigned int)));
     hostClock = static_cast<unsigned int*>(
-        malloc(NUM_LOADS * sizeof(unsigned int)));
+        malloc(ITERATIONS * sizeof(unsigned int)));
 
     srand(static_cast<unsigned int>(time(nullptr)));
     for (size_t i = 0; i < size; i++) {
@@ -86,10 +87,10 @@ int main(int argc, char *argv[]) {
     cudaMalloc(reinterpret_cast<void**>(&deviceInput),
         size * sizeof(unsigned int));
     cudaMalloc(reinterpret_cast<void**>(&deviceClock),
-        NUM_LOADS * sizeof(unsigned int));
+        ITERATIONS * sizeof(unsigned int));
     cudaMemcpy(deviceInput, hostInput, size * sizeof(unsigned int),
         cudaMemcpyHostToDevice);
-    cudaMemset(deviceClock, 0, NUM_LOADS * sizeof(unsigned int));
+    cudaMemset(deviceClock, 0, ITERATIONS * sizeof(unsigned int));
 
     CUmodule module;
     CUfunction kernel;
@@ -102,11 +103,11 @@ int main(int argc, char *argv[]) {
     cuLaunchKernel(kernel, 1, 1, 1, 1, 1, 1, 0, 0, args, 0);
     cudaDeviceSynchronize();
 
-    cudaMemcpy(hostClock, deviceClock, NUM_LOADS * sizeof(unsigned int),
+    cudaMemcpy(hostClock, deviceClock, ITERATIONS * sizeof(unsigned int),
         cudaMemcpyDeviceToHost);
 
-    std::cout << "size,offset,latency" << std::endl;
-    for (size_t i = 0; i < NUM_LOADS; i++) {
+    std::cout << "Size,Index,Cycles" << std::endl;
+    for (size_t i = 0; i < ITERATIONS; i++) {
         std::cout << size << "," << (offset + (stride * i)) << ","
                   << hostClock[i] << std::endl;
     }
