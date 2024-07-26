@@ -13,8 +13,8 @@ const size_t NUM_LOADS = 128;
 
 int main(int argc, char *argv[]) {
     if (argc != 4) {
-        std::cerr << "Usage: " << argv[0] << " <size> <offset> <stride>"
-                  << std::endl;
+        std::cerr << "Usage: " << argv[0]
+                  << " <array-size> <start-offset> <stride>" << std::endl;
         return -1;
     }
 
@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
         for (int i = 1; i < argc; i++) {
             switch(i) {
                 case 1:
-                    argValue = std::stol(argv[i]);
+                    argValue = std::stoll(argv[i]);
                     if ((argValue < std::numeric_limits<unsigned int>::max()) &&
                         (argValue > 0) && ((argValue % 2) == 0)) {
                         size = static_cast<size_t>(argValue);
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
                     }
                     break;
                 case 2:
-                    argValue = std::stol(argv[i]);
+                    argValue = std::stoll(argv[i]);
                     if ((argValue < static_cast<int64_t>(size)) &&
                         (argValue >= 0)) {
                         offset = static_cast<unsigned int>(argValue);
@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
                     }
                     break;
                 case 3:
-                    argValue = std::stol(argv[i]);
+                    argValue = std::stoll(argv[i]);
                     if (((offset + (argValue * (NUM_LOADS - 1))) < size) &&
                         (argValue >= 0)) {
                         stride = static_cast<unsigned int>(argValue);
@@ -59,7 +59,8 @@ int main(int argc, char *argv[]) {
                     break;
                 default:
                     std::cerr << "Usage: " << argv[0]
-                              << " <size> <offset> <stride>" << std::endl;
+                              << " <array-size> <start-offset> <stride>"
+                              << std::endl;
                     return -1;
             }
         }
@@ -105,7 +106,7 @@ int main(int argc, char *argv[]) {
     cudaMemcpy(hostClock, deviceClock, NUM_LOADS * sizeof(unsigned int),
         cudaMemcpyDeviceToHost);
 
-    std::cout << "size,offset,latency" << std::endl;
+    std::cout << "Size,Index,Cycles" << std::endl;
     for (size_t i = 0; i < NUM_LOADS; i++) {
         std::cout << size << "," << (offset + (stride * i)) << ","
                   << hostClock[i] << std::endl;
