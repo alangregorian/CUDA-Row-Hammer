@@ -7,21 +7,23 @@
 #include <cuda_runtime.h>
 
 const struct option LongOptions[] = {
-    {"help", no_argument, nullptr, 'h'},
-    {"iterations", required_argument, nullptr, 'i'},
-    {"size", required_argument, nullptr, 'n'},
-    {"stride", required_argument, nullptr, 's'}
+    {"help", no_argument, 0, 'h'},
+    {"iterations", required_argument, 0, 'i'},
+    {"random", no_argument, 0, 'r'},
+    {"size", required_argument, 0, 'n'},
+    {"stride", required_argument, 0, 's'},
+    {0, 0, 0, 0}
 };
 
 void initPattern(unsigned int *pattern, const size_t size,
     const size_t stride, const bool random);
 void printResults(const unsigned int *indices, const unsigned int *latencies,
-    const size_t iterations, const size_t size, const size_t stride);
+    const size_t iterations, const size_t size);
 void shufflePattern(unsigned int *pattern, const size_t size,
     const size_t stride);
 void usage(const char *program);
 
-__global__ void pointerChaseKernel(unsigned int *pattern,
+__global__ void pointerChaseKernel(volatile unsigned int *pattern,
     unsigned int *indices, unsigned int *latencies, const size_t iterations);
 
 void initPattern(unsigned int *pattern, const size_t size,
@@ -31,17 +33,21 @@ void initPattern(unsigned int *pattern, const size_t size,
     }
     pattern[size-stride] = 0;
 
-    if (random == true) {
+    if (random) {
         shufflePattern(pattern, size, stride);
     }
 }
 
 void printResults(const unsigned int *indices, const unsigned int *latencies,
-    const size_t iterations, const size_t size, const size_t stride) {
-    std::cout << "size,stride,index,latency" << std::endl;
+    const size_t iterations, const size_t size) {
+    unsigned int currIndex = 0;
+
+    std::cout << "Size,Index,Cycles" << std::endl;
     for (size_t i = 0; i < iterations; i++) {
-        std::cout << size << "," << stride * sizeof(unsigned int) << ","
-                  << indices[i] << "," << latencies[i] << std::endl;
+        std::cout << size << "," << currIndex << "," << latencies[i]
+                  << std::endl;
+
+        currIndex = indices[i];
     }
 }
 
@@ -68,9 +74,9 @@ void usage(const char *program) {
 
 // Fine-grained pointer chasing
 // https://arxiv.org/pdf/1509.02308
-__global__ void pointerChaseKernel(unsigned int *pattern,
+__global__ void pointerChaseKernel(volatile unsigned int *pattern,
     unsigned int *indices, unsigned int *latencies, const size_t iterations) {
-    clock_t  start, stop;
+    clock_t start, stop;
     unsigned int j = 0;
 
     for (size_t i = 0; i < iterations; i++) {
@@ -90,7 +96,8 @@ int main(int argc, char *argv[]) {
     bool random = false;
 
     try {
-        int opt, optValue;
+        int opt;
+        int64_t optValue;
         while ((opt = getopt_long(argc, argv, "hi:n:rs:",
                 LongOptions, nullptr)) != -1) {
             switch (opt) {
@@ -99,9 +106,9 @@ int main(int argc, char *argv[]) {
                     return 0;
                 case 'i':
                     if (optarg) {
-                        optValue = std::stoi(optarg);
+                        optValue = std::stoll(optarg);
                         if (optValue > 0) {
-                            iterations = optValue;
+                            iterations = static_cast<size_t>(optValue);
                         } else {
                             std::cerr << "Error: Invalid iterations value"
                                       << std::endl;
@@ -114,11 +121,11 @@ int main(int argc, char *argv[]) {
                     break;
                 case 'n':
                     if (optarg) {
-                        optValue = std::stoi(optarg);
+                        optValue = std::stoll(optarg);
                         if ((optValue > 0) && ((optValue % 2) == 0) &&
                             (optValue <
                                 std::numeric_limits<unsigned int>::max())) {
-                            size = optValue;
+                            size = static_cast<size_t>(optValue);
                         } else {
                             std::cerr << "Error: Invalid size value"
                                       << std::endl;
@@ -134,10 +141,10 @@ int main(int argc, char *argv[]) {
                     break;
                 case 's':
                     if (optarg) {
-                        optValue = std::stoi(optarg);
-                        if (optValue > 0 && optValue >= sizeof(unsigned int)) {
-                            stride = (pow(2, ceil(log2(optValue))) /
-                                      sizeof(unsigned int));
+                        optValue = std::stoll(optarg);
+                        if ((optValue > 0) && (optValue >=
+                                static_cast<int64_t>(sizeof(unsigned int)))) {
+                            stride = pow(2, ceil(log2(optValue)));
                         } else {
                             std::cerr << "Error: Invalid stride value"
                                       << std::endl;
@@ -180,12 +187,15 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    srand(std::time(nullptr));
+    srand(static_cast<unsigned int>(time(nullptr)));
     
     unsigned int *hostLatencies, *hostPattern, *hostIndices;
-    hostIndices = (unsigned int*)malloc(iterations * sizeof(unsigned int));
-    hostLatencies = (unsigned int*)malloc(iterations * sizeof(unsigned int));
-    hostPattern = (unsigned int*)malloc(size * sizeof(unsigned int));
+    hostIndices = static_cast<unsigned int*>(
+        malloc(iterations * sizeof(unsigned int)));
+    hostLatencies = static_cast<unsigned int*>(
+        malloc(iterations * sizeof(unsigned int)));
+    hostPattern = static_cast<unsigned int*>(
+        malloc(size * sizeof(unsigned int)));
 
     memset(hostIndices, 0, iterations * sizeof(unsigned int));
     memset(hostLatencies, 0, iterations * sizeof(unsigned int));
@@ -193,9 +203,12 @@ int main(int argc, char *argv[]) {
     initPattern(hostPattern, size, stride, random);
 
     unsigned int *deviceIndices, *deviceLatencies, *devicePattern;
-    cudaMalloc((void**)&deviceIndices, iterations * sizeof(unsigned int));
-    cudaMalloc((void**)&deviceLatencies, iterations * sizeof(unsigned int));
-    cudaMalloc((void**)&devicePattern, size * sizeof(unsigned int));
+    cudaMalloc(reinterpret_cast<void**>(&deviceIndices),
+        iterations * sizeof(unsigned int));
+    cudaMalloc(reinterpret_cast<void**>(&deviceLatencies),
+        iterations * sizeof(unsigned int));
+    cudaMalloc(reinterpret_cast<void**>(&devicePattern),
+        size * sizeof(unsigned int));
 
     cudaMemset(deviceIndices, 0, iterations * sizeof(unsigned int));
     cudaMemset(deviceLatencies, 0, iterations * sizeof(unsigned int));
@@ -231,7 +244,7 @@ int main(int argc, char *argv[]) {
         cudaMemcpyDeviceToHost);
     cudaMemcpy(hostLatencies, deviceLatencies,
          iterations * sizeof(unsigned int), cudaMemcpyDeviceToHost);
-    printResults(hostIndices, hostLatencies, iterations, size, stride);
+    printResults(hostIndices, hostLatencies, iterations, size);
 
     cudaFree(deviceIndices);
     cudaFree(deviceLatencies);

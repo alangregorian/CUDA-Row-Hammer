@@ -1,8 +1,12 @@
 NVCC := nvcc
-NVCCFLAGS := -O0 -Xcompiler -O0 -Xptxas -O1 -lineinfo -O0
+NVCCFLAGS := -O0 -Xcompiler -O0 -Xcompiler -Wextra -Xcompiler -Wall -Xptxas -O1
+
+.PHONY: all clean
+
+all: pointer_chase
 
 pointer_chase: pointer_chase.cu
-	$(NVCC) $(CUDAFLAGS) -o pointer_chase pointer_chase.cu
+	$(NVCC) $(NVCCFLAGS) $< -o $@
 
 clean:
 	rm -f pointer_chase
