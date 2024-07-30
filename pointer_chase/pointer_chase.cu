@@ -142,9 +142,8 @@ int main(int argc, char *argv[]) {
                 case 's':
                     if (optarg) {
                         optValue = std::stoll(optarg);
-                        if ((optValue > 0) && (optValue >=
-                                static_cast<int64_t>(sizeof(unsigned int)))) {
-                            stride = pow(2, ceil(log2(optValue)));
+                        if (optValue > 0) {
+                            stride = static_cast<size_t>(optValue);
                         } else {
                             std::cerr << "Error: Invalid stride value"
                                       << std::endl;
@@ -182,8 +181,8 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    if (stride > size) {
-        std::cerr << "Error: Stride is larger than size" << std::endl;
+    if (stride >= size) {
+        std::cerr << "Error: Invalid stride value" << std::endl;
         return -1;
     }
 

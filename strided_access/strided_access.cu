@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
                 case 3:
                     argValue = std::stoll(argv[i]);
                     if (((offset + (argValue * (ITERATIONS - 1))) < size) &&
-                        (argValue >= 0)) {
+                        (argValue > 0)) {
                         stride = static_cast<unsigned int>(argValue);
                         strideBytes = stride * sizeof(unsigned int);
                     } else {
