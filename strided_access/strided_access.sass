@@ -1,0 +1,45 @@
+<params>
+input, 8
+clock, 8
+offset, 4
+stride, 4
+</params>
+
+<regs>
+0-3 : input_0, input_1, clock_0, clock_1
+4-5 : offset_0, stride_0
+6-8 : start, stop, value
+9-136 : t<1-128>
+</regs>
+
+<code>
+out = []
+iterations = 128
+
+out.append('--:-:-:-:2     MOV input_0, input[0];')
+out.append('--:-:-:-:2     MOV input_1, input[1];')
+out.append('--:-:-:-:2     MOV clock_0, clock[0];')
+out.append('--:-:-:-:2     MOV clock_1, clock[1];')
+
+out.append('--:-:-:-:2     MOV offset_0, offset;')
+out.append('--:-:-:-:2     MOV stride_0, stride;')
+
+out.append('--:-:-:-:5     NOP;')
+out.append('--:-:-:-:2     IADD3 input_0, offset_0, input_0, RZ;')
+
+for i in range(iterations):
+        out.append('--:-:-:-:2     CS2R start, SR_CLOCKLO;')
+        out.append('--:-:0:-:2     IADD3 input_0, stride_0, input_0, RZ;')
+        out.append('01:-:1:-:2     LDG.E value, [input_0];')
+        out.append('02:-:-:-:2     CS2R stop, SR_CLOCKLO;')
+
+        out.append('--:-:-:-:5     NOP;')
+        out.append('--:-:-:-:2     IADD3 t{}, stop, -start, RZ;'.format(i+1))
+
+for i in range(iterations):
+    out.append('--:-:-:-:2    STG.E [clock_0+{}], t{};'.format(hex(4*i), i+1))
+
+out.append('--:-:-:-:5     EXIT;')
+
+out_ = '\n'.join(out) + '\n'
+</code>
