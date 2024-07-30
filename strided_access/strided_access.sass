@@ -27,7 +27,7 @@ out.append('--:-:-:-:2     MOV stride_0, stride;')
 out.append('--:-:-:-:5     NOP;')
 out.append('--:-:-:-:2     IADD3 input_0, offset_0, input_0, RZ;')
 
-for i in range(0, iterations):
+for i in range(iterations):
         out.append('--:-:-:-:2     CS2R start, SR_CLOCKLO;')
         out.append('--:-:0:-:2     IADD3 input_0, stride_0, input_0, RZ;')
         out.append('01:-:1:-:2     LDG.E value, [input_0];')
